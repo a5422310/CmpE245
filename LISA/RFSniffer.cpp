@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
             {
                 if (value != 4)
                 {
-                    printf("Received Byte: %u\n", value);
+                    printf("Received Byte: (%c) = %u\n", value, value);
                 }
                 input_buffer[input_buffer_count] = value;
                 input_buffer_count++;

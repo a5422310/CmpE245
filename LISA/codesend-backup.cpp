@@ -68,18 +68,10 @@ int main(int argc, char *argv[]) {
     // mySwitch.send(code, 24);
 
     // Added by Jason
-	#define Buffer_Size 128
-	#define Sync_Field_Size 32		//32 Bytes
-	
     srand(time(NULL));
-	int sync_field_index, payload_index;
-    unsigned char sync_field_buffer[Sync_Field_Size] = {0};
-	unsigned char output_buffer[Buffer_Size];
-	for(int k = 0; k < Buffer_Size; k++) output_buffer[k] = rand() % (256)+1;
-    const char * payload = "SJSU_CMPE245_JASON_8103";
-	
+    unsigned char sync_field_buffer[32] = {0};
     char prefixes[2] = {0xA0, 0x50};
-    int corrupt_num = (Sync_Field_Size * corruption) / 100;
+    int corrupt_num = (32 * corruption) / 100;
     int corrupted_record [corrupt_num];
     int rand_byte = 0;
     int index;
@@ -94,41 +86,47 @@ int main(int argc, char *argv[]) {
 	}
     }
 
-	// Corrupt Sync field
     for(int k = 0; k < corrupt_num; k++)	corrupted_record [k] = {-1};
     for(int i = 0; i < corrupt_num; i++)
     {
     	run:
-		rand_byte = rand() % (Sync_Field_Size);
+	rand_byte = rand() % (32);
     	for(int j = 0; j < corrupt_num; j++)
     	{
-			if(corrupted_record[j] == rand_byte)	goto run;
+	    if(corrupted_record[j] == rand_byte)	goto run;
     	}
 	corrupted_record[i] = rand_byte;
-	sync_field_buffer[rand_byte] = rand() % (Sync_Field_Size * 8);
-    }
-	
-    int payload_length = strlen(payload);
-    sync_field_index = rand() % (Buffer_Size - (Sync_Field_Size + payload_length));
-    payload_index = Sync_Field_Size + sync_field_index;
-    for(int i = sync_field_index; i < sync_field_index + Sync_Field_Size; i++)	//insert sync field + payload at random offset
-    {
-    	output_buffer[i] = sync_field_buffer[i - sync_field_index];
-    	output_buffer[i + Sync_Field_Size] = payload [i - sync_field_index];
-    }
-	
-
-    // Send output
-    for(int i = 0; i < Buffer_Size; i++)
-    {
-    	mySwitch.send(output_buffer[i], 8);
-	printf("Transmit Byte: (0x%02X) = %d\n", output_buffer[i], output_buffer[i]);
+	sync_field_buffer[rand_byte] = rand() % (32 * 8);
     }
 
-    for(int i = 0; i < Buffer_Size / 4; i++)
+    for(int i = 0; i < 32; i++)
+    {
+    	mySwitch.send(sync_field_buffer[i], 8);
+	printf("Transmit Sync Byte: (0x%02X) = %d\n", sync_field_buffer[i], sync_field_buffer[i]);
+    }
+
+
+
+
+    // Send Payload w/offset
+    uint c = 0;
+    uint payloadByte = 0;
+    char payloadString[MAX_PAYLOAD_BYTES] = "SJSU_CMPE245_JASON_8103";
+    while (payloadString[c] != '\0')
+    {
+    	payloadByte = (unsigned)payloadString[c];
+		mySwitch.send(payloadByte, 8); // 8 bits (1 byte) length
+		printf("Transmit Payload Byte: (%c) = %d\n", payloadString[c], payloadByte);
+		c++;
+    }
+
+    // mySwitch.setPulseLength(500);
+    mySwitch.setPulseLength(pulseLength);
+    // Send remaining bytes to fill up 128 byte buffer on reciever end
+    for(uint i = (unsigned)strlen(payloadString); i < MAX_PAYLOAD_BYTES+10; i++)
     {
     	mySwitch.send(4, 8); // 4 EOT (end of transmission)
-    	printf("Transmit Byte: (EOT) = 4\n");
+    	printf("Transmit Payload Byte: (EOT) = 4\n");
     }
     
     return 0;
