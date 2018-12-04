@@ -104,8 +104,8 @@ int main(int argc, char *argv[]) {
     	{
 			if(corrupted_record[j] == rand_byte)	goto run;
     	}
-	corrupted_record[i] = rand_byte;
-	sync_field_buffer[rand_byte] = rand() % (Sync_Field_Size * 8);
+		corrupted_record[i] = rand_byte;
+		sync_field_buffer[rand_byte] = rand() % (Sync_Field_Size * 8);
     }
 	
     int payload_length = strlen(payload);
@@ -122,12 +122,12 @@ int main(int argc, char *argv[]) {
     for(int i = 0; i < Buffer_Size; i++)
     {
     	mySwitch.send(output_buffer[i], 8);
-	printf("Transmit Byte: (0x%02X) = %d\n", output_buffer[i], output_buffer[i]);
+		printf("Transmit Byte: (0x%02X) = %d\n", output_buffer[i], output_buffer[i]);
     }
 
     for(int i = 0; i < Buffer_Size / 4; i++)
     {
-    	mySwitch.send(4, 8); // 4 EOT (end of transmission)
+    	mySwitch.send(4, 8); // 4 EOT( End of Transmission)
     	printf("Transmit Byte: (EOT) = 4\n");
     }
     
