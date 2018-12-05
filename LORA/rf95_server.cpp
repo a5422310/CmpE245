@@ -44,8 +44,19 @@
 #include "../RasPiBoards.h"
 
 // Our RFM95 Configuration 
-#define RF_FREQUENCY  915.00
-#define RF_NODE_ID    1
+
+//-----------------------------
+// Added and modified by Jason
+// #define RF_FREQUENCY  915.00		//3.(1) FBW: Frequency band. 868 or 915
+// #define RF_PWR		  14	//3.(11)PWR: Tx Power. 5 to 23
+// #define RF_NODE_ID    1		//3.(8) ADR: address based communication
+
+double RF_FREQUENCY = 915.00;
+int RF_PWR = 14;
+int RF_CLIENT_ID = 10;
+int RF_NODE_ID = 1;
+
+//-----------------------------
 
 // Create an instance of a driver
 RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
@@ -63,6 +74,22 @@ void sig_handler(int sig)
 //Main Function
 int main (int argc, const char* argv[] )
 {
+	// Added by Jason
+	if (argc == 1)
+	{
+        printf("Usage: %s [RF_FREQUENCY] [RF_PWR] [RF_CLIENT_ID] [RF_NODE_ID]\n", argv[0]);
+        printf("RF_FREQUENCY\t- RF Frequency band\n");
+        printf("RF_PWR\t\t- Tx Power\n");
+        printf("RF_CLIENT_ID\t- VALID CLIENT ID\n");
+        printf("RF_NODE_ID\t- SERVER NODE ID\n");
+        return -1;
+    }
+	RF_FREQUENCY = atoi(argv[1]);
+	if (argc >= 3) RF_PWR = atoi(argv[2]);
+	if (argc >= 4) RF_CLIENT_ID = atoi(argv[3]);
+	if (argc >= 5) RF_NODE_ID = atoi(argv[4]);
+	
+	//------------------------------------
   unsigned long led_blink = 0;
   
   signal(SIGINT, sig_handler);
@@ -122,7 +149,7 @@ int main (int argc, const char* argv[] )
 
     // RF95 Modules don't have RFO pin connected, so just use PA_BOOST
     // check your country max power useable, in EU it's +14dB
-    rf95.setTxPower(14, false);
+    rf95.setTxPower(RF_PWR, false);
 
     // You can optionally require this module to wait until Channel Activity
     // Detection shows no activity on the channel before transmitting by setting
@@ -175,9 +202,17 @@ int main (int argc, const char* argv[] )
           int8_t rssi  = rf95.lastRssi();
           
           if (rf95.recv(buf, &len)) {
+
+	    // Added by Jason
+	    if(from==RF_CLIENT_ID && to==RF_NODE_ID){
             printf("Packet[%02d] #%d => #%d %ddB: ", len, from, to, rssi);
             printbuffer(buf, len);
-          } else {
+	    }
+	    else if (to!=RF_NODE_ID) printf("Saw a massage from #%d => #%d ", from, to);
+	    else printf("Client ID #%d is invalid!", from);
+
+          }
+	  else {
             Serial.print("receive failed");
           }
           printf("\n");

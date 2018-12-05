@@ -43,10 +43,19 @@
 // constants with CS/IRQ/RESET/on board LED pins definition
 #include "../RasPiBoards.h"
 
-// Our RFM95 Configuration 
-#define RF_FREQUENCY  915.00
-#define RF_GATEWAY_ID 1 
-#define RF_NODE_ID    10
+//-----------------------------
+// Added and modified by Jason
+// #define RF_FREQUENCY  915.00		//3.(1) FBW: Frequency band. 868 or 915
+// #define RF_PWR		  14	//3.(11)PWR: Tx Power. 5 to 23
+//#define RF_GATEWAY_ID 1		//3.(8) ADR: address based communication
+//#define RF_NODE_ID    10		//3.(8) ADR: address based communication
+
+double RF_FREQUENCY = 915.00;
+int RF_PWR = 14;
+int RF_GATEWAY_ID = 1;
+int RF_NODE_ID = 10;
+ 
+//-----------------------------
 
 // Create an instance of a driver
 RH_RF95 rf95(RF_CS_PIN, RF_IRQ_PIN);
@@ -64,6 +73,28 @@ void sig_handler(int sig)
 //Main Function
 int main (int argc, const char* argv[] )
 {
+	// Added by Jason
+	if (argc == 1)
+	{
+        printf("Usage: %s [RF_FREQUENCY] [RF_PWR] [RF_NODE_ID] [RF_GATEWAY_ID]\n", argv[0]);
+        printf("RF_FREQUENCY\t- RF Frequency band\n");
+        printf("RF_PWR\t\t- Tx Power\n");
+        printf("RF_NODE_ID\t- CLIENT NODE ID\n");
+        printf("RF_GATEWAY_ID\t- SERVER NODE ID\n");
+        return -1;
+    }
+	RF_FREQUENCY = atoi(argv[1]);
+	if (argc >= 3) RF_PWR = atoi(argv[2]);
+	if (RF_PWR< -1 || RF_PWR > 23)
+	{
+	printf("Invalid RF_PWR\n");
+	return -1;
+	}
+	if (argc >= 4) RF_NODE_ID = atoi(argv[3]);
+	if (argc >= 5) RF_GATEWAY_ID = atoi(argv[4]);
+	
+	//------------------------------------
+
   static unsigned long last_millis;
   static unsigned long led_blink = 0;
   
@@ -132,7 +163,7 @@ int main (int argc, const char* argv[] )
     // Failure to do that will result in extremely low transmit powers.
     //rf95.setTxPower(14, true);
 
-    rf95.setTxPower(14, false); 
+    rf95.setTxPower(RF_PWR, false); 
 
     // You can optionally require this module to wait until Channel Activity
     // Detection shows no activity on the channel before transmitting by setting
@@ -153,14 +184,16 @@ int main (int argc, const char* argv[] )
 
     last_millis = millis();
 
+    double Total_bits_Per_Second = 0;
+    
     //Begin the main body of code
     while (!force_exit) {
 
       //printf( "millis()=%ld last=%ld diff=%ld\n", millis() , last_millis,  millis() - last_millis );
 
       // Send every 5 seconds
-      if ( millis() - last_millis > 5000 ) {
-        last_millis = millis();
+      //if ( millis() - last_millis > 1 ) {
+        //last_millis = millis();
 
 #ifdef RF_LED_PIN
         led_blink = millis();
@@ -168,12 +201,19 @@ int main (int argc, const char* argv[] )
 #endif
         
         // Send a message to rf95_server
-        uint8_t data[] = "CMPE 245 Jason!";
+        uint8_t data[] = "SJSU";
         uint8_t len = sizeof(data);
-        
-        printf("Sending %02d bytes to node #%d => ", len, RF_GATEWAY_ID );
+
+
+
+        printf("Sending %02d bytes to node #%d => ", len, RF_GATEWAY_ID);
         printbuffer(data, len);
-        printf("\n" );
+
+	Total_bits_Per_Second += len * 8;      
+	double BW_Time = (Total_bits_Per_Second / millis()) * 1000;
+	//double BW_Time = millis();
+
+        printf(", BW= %.0f bps\n", BW_Time);
         rf95.send(data, len);
         rf95.waitPacketSent();
 /*
@@ -195,7 +235,7 @@ int main (int argc, const char* argv[] )
         }
 */
         
-      }
+      //}
 
 #ifdef RF_LED_PIN
       // Led blink timer expiration ?
@@ -207,7 +247,7 @@ int main (int argc, const char* argv[] )
       
       // Let OS doing other tasks
       // Since we do nothing until each 5 sec
-      bcm2835_delay(100);
+      bcm2835_delay(50);
     }
   }
 
