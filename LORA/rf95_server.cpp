@@ -232,7 +232,7 @@ int main (int argc, const char* argv[] )
       // Let OS doing other tasks
       // For timed critical appliation you can reduce or delete
       // this delay, but this will charge CPU usage, take care and monitor
-      bcm2835_delay(5);
+      bcm2835_delay(50);
     }
   }
 

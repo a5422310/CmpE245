@@ -22,6 +22,8 @@ PROGMEM static const RH_RF95::ModemConfig MODEM_CONFIG_TABLE[] =
     { 0x92,   0x74,    0x00}, // Bw500Cr45Sf128
     { 0x48,   0x94,    0x00}, // Bw31_25Cr48Sf512
     { 0x78,   0xc4,    0x00}, // Bw125Cr48Sf4096
+	//1d: 7-4 bandwidth,		3-1 coding rate,	0 Header mode
+	//1e: 7-4 SpreadingFactor, 	3 continuous mode,	2 CRC enable,	1-0 RX Time-Out MSB
     
 };
 

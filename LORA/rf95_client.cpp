@@ -210,10 +210,10 @@ int main (int argc, const char* argv[] )
         printbuffer(data, len);
 
 	Total_bits_Per_Second += len * 8;      
-	double BW_Time = (Total_bits_Per_Second / millis()) * 1000;
-	//double BW_Time = millis();
+	double bps = (Total_bits_Per_Second / millis()) * 1000;
+	//double bps = millis();
 
-        printf(", BW= %.0f bps\n", BW_Time);
+        printf(", Bit Rate= %.0f bps\n", bps);
         rf95.send(data, len);
         rf95.waitPacketSent();
 /*
